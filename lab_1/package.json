@@ -1,0 +1,12 @@
+{
+  "name": "lab_1",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "node --env-file=.env --watch app.js"
+  }
+}
