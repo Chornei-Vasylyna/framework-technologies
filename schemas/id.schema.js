@@ -1,4 +1,4 @@
-export const idSchema = {
+const idSchema = {
   type: "object",
   properties: {
     id: { type: "integer", minimum: 1 },
@@ -6,3 +6,5 @@ export const idSchema = {
   required: ["id"],
   additionalProperties: false,
 };
+
+module.exports = { idSchema };

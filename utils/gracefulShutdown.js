@@ -1,22 +1,24 @@
-import { server } from "../app.js";
+const gracefulShutdown = (signal) => {
+  console.log(`Received ${signal}. Shutting down gracefully...`);
 
-export const gracefulShutdown = (signal) => {
-	console.log(`Received ${signal}. Shutting down gracefully...`);
+  const { server } = require("../app");
 
-	const forceTimeout = setTimeout(() => {
-		console.error("Could not close connections in time, forcing shutdown");
-		process.exit(1);
-	}, 10000);
+  const forceTimeout = setTimeout(() => {
+    console.error("Could not close connections in time, forcing shutdown");
+    process.exit(1);
+  }, 10000);
 
-	server.close((error) => {
-		clearTimeout(forceTimeout);
+  server.close((error) => {
+    clearTimeout(forceTimeout);
 
-		if (error) {
-			console.error(`Error closing server: ${error.message}`);
-			process.exit(1);
-		}
+    if (error) {
+      console.error(`Error closing server: ${error.message}`);
+      process.exit(1);
+    }
 
-		console.log("Server closed. Exiting process.");
-		process.exit(0);
-	});
+    console.log("Server closed. Exiting process.");
+    process.exit(0);
+  });
 };
+
+module.exports = { gracefulShutdown };

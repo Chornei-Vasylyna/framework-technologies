@@ -1,5 +1,5 @@
-import { envSchema } from "../schemas/env.schema.js";
-import { ajv } from "./ajv.js";
+const { envSchema } = require("../schemas/env.schema");
+const { ajv } = require("./ajv");
 
 const HOSTNAME = process.env.HOSTNAME;
 const PORT = process.env.PORT;
@@ -14,8 +14,10 @@ if (!valid) {
   process.exit(1);
 }
 
-export const config = {
+const config = {
   HOSTNAME,
   PORT: Number(PORT),
   NODE_ENV,
 };
+
+module.exports = { config };

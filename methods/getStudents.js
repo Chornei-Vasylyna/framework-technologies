@@ -1,6 +1,6 @@
-import { STUDENTS } from "#data/students.js";
+const { STUDENTS } = require("../data/students");
 
-export const getStudents = (parsedUrl, res) => {
+const getStudents = (parsedUrl, res) => {
   const course = parsedUrl.searchParams.get("course");
 
   if (course) {
@@ -12,3 +12,5 @@ export const getStudents = (parsedUrl, res) => {
     res.end(JSON.stringify(STUDENTS));
   }
 };
+
+module.exports = { getStudents };

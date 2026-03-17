@@ -8,10 +8,6 @@ export default defineConfig([
     plugins: { js },
     extends: ["js/recommended"],
     languageOptions: { globals: globals.node },
-    rules: {
-      "no-unused-vars": "warn",
-      "no-undef": "warn",
-      semi: ["warn", "always"],
-    },
   },
+  { files: ["**/*.js"], languageOptions: { sourceType: "commonjs" } },
 ]);

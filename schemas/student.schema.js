@@ -1,4 +1,4 @@
-export const insertStudentSchema = {
+const insertStudentSchema = {
   type: "object",
   properties: {
     name: { type: "string", minLength: 2 },
@@ -12,7 +12,7 @@ export const insertStudentSchema = {
   additionalProperties: false,
 };
 
-export const updateStudentSchema = {
+const updateStudentSchema = {
   type: "object",
   properties: {
     id: { not: {} },
@@ -25,3 +25,5 @@ export const updateStudentSchema = {
   },
   additionalProperties: false,
 };
+
+module.exports = { insertStudentSchema, updateStudentSchema };

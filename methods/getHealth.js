@@ -1,4 +1,4 @@
-export const getHealth = (res) => {
+const getHealth = (res) => {
   const healthData = {
     pid: process.pid,
     nodeVersion: process.nodeVersion,
@@ -10,3 +10,5 @@ export const getHealth = (res) => {
   res.statusCode = 200;
   res.end(JSON.stringify(healthData));
 };
+
+module.exports = { getHealth };

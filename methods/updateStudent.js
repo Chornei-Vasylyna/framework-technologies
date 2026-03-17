@@ -1,9 +1,9 @@
-import { STUDENTS } from "#data/students.js";
-import { getIdByPath } from "#utils/getIdByPath.js";
-import { validateId } from "#validators/validateId.js";
-import { validateUpdate } from "#validators/validateStudent.js";
+const { STUDENTS } = require("../data/students");
+const { getIdByPath } = require("../utils/getIdByPath");
+const { validateId } = require("../validators/validateId");
+const { validateUpdate } = require("../validators/validateStudent");
 
-export const updateStudent = (req, res, pathname) => {
+const updateStudent = (req, res, pathname) => {
   const id = getIdByPath(pathname);
   const validationMessage = validateId(id);
 
@@ -47,3 +47,5 @@ export const updateStudent = (req, res, pathname) => {
     }
   });
 };
+
+module.exports = { updateStudent };

@@ -1,4 +1,4 @@
-export const envSchema = {
+const envSchema = {
   type: "object",
   properties: {
     HOSTNAME: { type: "string", minLength: 2 },
@@ -8,3 +8,5 @@ export const envSchema = {
   required: ["HOSTNAME", "PORT", "NODE_ENV"],
   additionalProperties: false,
 };
+
+module.exports = { envSchema };

@@ -1,3 +1,4 @@
-import { Ajv } from "ajv";
+const { Ajv } = require("ajv");
 
-export const ajv = new Ajv({ allErrors: true });
+const ajv = new Ajv({ allErrors: true });
+module.exports = { ajv };
