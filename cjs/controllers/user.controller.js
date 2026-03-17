@@ -1,7 +1,6 @@
 const userService = require('../services/user.service');
-const { count } = require('../state/request-counter');
 
-const getUsers = async (request, reply) => {
+const getUsers = async () => {
   const { increment } = require('../state/request-counter');
   increment();
 
@@ -22,7 +21,7 @@ const getUserById = async (request, reply) => {
   return { user };
 };
 
-exports = {
+module.exports = {
   getUsers,
   getUserById
 };

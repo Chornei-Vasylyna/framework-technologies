@@ -1,26 +1,28 @@
-import * as userRepository from '../repositories/user.repository.js';
-import { count } from '../state/request-counter.js';
-import { initPermissions } from '../services/user.service.js';
+import * as userRepository from "../repositories/user.repository.js";
+import { initPermissions } from "../services/user.service.js";
+import { increment } from "../state/request-counter.js";
 
-initPermissions();
 
-export const getUsers = async (request, reply) => {
-  count++;
+export const getUsers = async () => {
+	increment();
 
-  const users = await userRepository.findAll();
-  return { users };
+	const users = await userRepository.findAll();
+	return { users };
 };
 
 const getUserById = async (request, reply) => {
-  count++;
-  const { id } = request.params;
-  const user = await userRepository.findById(id);
-  if (!user) {
-    return reply.status(404).send({ error: 'User not found' });
-  }
-  return { user };
+  increment();
+	const { id } = request.params;
+	const user = await userRepository.findById(id);
+	if (!user) {
+		return reply.status(404).send({ error: "User not found" });
+	}
+	return { user };
 };
 
 export default {
-  getUserById
+  getUserById,
+  getUsers
 };
+
+initPermissions();
