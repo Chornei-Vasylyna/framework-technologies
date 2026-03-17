@@ -1,12 +1,15 @@
-import { STUDENTS } from "../students.js";
-import { validateUpdate } from "../utils/validateStudent.js";
+import { STUDENTS } from "#data/students.js";
+import { getIdByPath } from "#utils/getIdByPath.js";
+import { validateId } from "#validators/validateId.js";
+import { validateUpdate } from "#validators/validateStudent.js";
 
 export const updateStudent = (req, res, pathname) => {
-  const id = parseInt(pathname.split("/")[2]);
+  const id = getIdByPath(pathname);
+  const validationMessage = validateId(id);
 
-  if (isNaN(id) || id <= 0) {
+  if (validationMessage) {
     res.statusCode = 400;
-    return res.end(JSON.stringify({ error: "Invalid id" }));
+    return res.end(JSON.stringify(validationMessage));
   }
 
   let body = "";
@@ -34,7 +37,7 @@ export const updateStudent = (req, res, pathname) => {
         res.end(
           JSON.stringify({ message: "Updated", student: STUDENTS[index] }),
         );
-      } catch (error) {
+      } catch {
         res.statusCode = 400;
         res.end(JSON.stringify({ error: "Invalid JSON" }));
       }

@@ -1,4 +1,4 @@
-import { STUDENTS } from "../students.js"
+import { STUDENTS } from "#data/students.js";
 
 export const getStudents = (parsedUrl, res) => {
   const course = parsedUrl.searchParams.get("course");

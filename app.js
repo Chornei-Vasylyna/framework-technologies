@@ -1,12 +1,12 @@
-import { createServer } from "http";
-import { config } from "./config.js";
-import { addStudent } from "./methods/addStudent.js";
-import { deleteStudent } from "./methods/deleteStudent.js";
-import { getHealth } from "./methods/getHealth.js";
-import { getStudents } from "./methods/getStudents.js";
-import { updateStudent } from "./methods/updateStudent.js";
-import { gracefulShutdown } from "./utils/gracefulShutdown.js";
-import { logRequest } from "./utils/logger.js";
+import { createServer } from "node:http";
+import { config } from "#configs/config.js";
+import { addStudent } from "#methods/addStudent.js";
+import { deleteStudent } from "#methods/deleteStudent.js";
+import { getHealth } from "#methods/getHealth.js";
+import { getStudents } from "#methods/getStudents.js";
+import { updateStudent } from "#methods/updateStudent.js";
+import { gracefulShutdown } from "#utils/gracefulShutdown.js";
+import { logRequest } from "#utils/logger.js";
 
 const PORT = config.PORT;
 const HOSTNAME = config.HOSTNAME;
@@ -20,9 +20,10 @@ export const server = createServer((req, res) => {
 
 	res.setHeader("Content-Type", "application/json; charset=utf-8");
 
-	if (method === "GET") {
-		if (pathname === "/students") getStudents(parsedUrl, res);
-		if (pathname === "/health") getHealth(res);
+	if (method === "GET" && pathname === "/students") {
+		getStudents(parsedUrl, res);
+	} else if (method === "GET" && pathname === "/health") {
+		getHealth(res);
 	} else if (method === "POST" && pathname === "/students") {
 		addStudent(req, res);
 	} else if (method === "PATCH" && pathname.startsWith("/students/")) {
