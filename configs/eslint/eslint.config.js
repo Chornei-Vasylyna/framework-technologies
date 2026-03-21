@@ -12,6 +12,7 @@ export default defineConfig([
       "no-unused-vars": "warn",
       "no-undef": "warn",
       semi: ["warn", "always"],
+      "no-process-env": ["error"],
     },
   },
 ]);

@@ -1,59 +1,41 @@
-import { createServer } from "node:http";
-import { config } from "#configs/config.js";
-import { addStudent } from "#methods/addStudent.js";
-import { deleteStudent } from "#methods/deleteStudent.js";
-import { getHealth } from "#methods/getHealth.js";
-import { getStudents } from "#methods/getStudents.js";
-import { updateStudent } from "#methods/updateStudent.js";
-import { gracefulShutdown } from "#utils/gracefulShutdown.js";
-import { logRequest } from "#utils/logger.js";
+import fastifyEnv from "@fastify/env";
+import sensible from "@fastify/sensible";
+import Fastify from "fastify";
 
-const PORT = config.PORT;
-const HOSTNAME = config.HOSTNAME;
+import { loadNodeEnv } from "#configs/fastify/env.js";
+import { registerHandlers } from "#configs/fastify/handlers.js";
+import { registerHooks } from "#configs/fastify/hooks.js";
+import { registerSecurityPlugins } from "#configs/fastify/security.js";
+import { ENV_OPTIONS } from "#constants/index.js";
+import { routes } from "#routes/index.js";
+import { getLoggerOptions } from "#utils/getLoggerOptions.js";
 
-export const server = createServer((req, res) => {
-	const method = req.method;
-	const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
-	const pathname = parsedUrl.pathname;
+export const buildApp = async () => {
+  const nodeEnv = await loadNodeEnv();
+  const logger = getLoggerOptions(nodeEnv);
 
-	logRequest(req, res);
+  const fastify = Fastify({
+    logger,
+    ajv: {
+      customOptions: {
+        coerceTypes: true,
+      },
+    },
+  });
 
-	res.setHeader("Content-Type", "application/json; charset=utf-8");
+  // Plugins
+  fastify.register(fastifyEnv, ENV_OPTIONS);
+  fastify.register(sensible);
+  await registerSecurityPlugins(fastify);
 
-	if (method === "GET" && pathname === "/students") {
-		getStudents(parsedUrl, res);
-	} else if (method === "GET" && pathname === "/health") {
-		getHealth(res);
-	} else if (method === "POST" && pathname === "/students") {
-		addStudent(req, res);
-	} else if (method === "PATCH" && pathname.startsWith("/students/")) {
-		updateStudent(req, res, pathname);
-	} else if (method === "DELETE" && pathname.startsWith("/students/")) {
-		deleteStudent(res, pathname);
-	} else {
-		res.statusCode = 404;
-		res.end(JSON.stringify({ error: "Route not found" }));
-	}
-});
+  // Hooks
+  await registerHooks(fastify);
 
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  // Handlers
+  await registerHandlers(fastify);
 
-process.on("uncaughtException", (error) => {
-	console.error("Uncaught Exception:", error.message);
-	gracefulShutdown("uncaughtException");
-});
-process.on("unhandledRejection", (reason) => {
-	console.error("Unhandled Rejection:", reason);
-	gracefulShutdown("unhandledRejection");
-});
+  // Routes
+  fastify.register(routes);
 
-server.listen(PORT, HOSTNAME, () => {
-	console.log(`Server running at http://${HOSTNAME}:${PORT}/`);
-});
-
-// Testing errors handling
-// hello()
-// setTimeout(() => {
-// 	Promise.reject("Test unhandled rejection");
-// }, 5000);
+  return fastify;
+};
