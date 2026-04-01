@@ -1,6 +1,11 @@
-import { stringify } from "csv-stringify/sync";
 import { ERROR_MESSAGES } from "#constants/errorMessages.js";
 import { studentRepository } from "#repositories/student.repository.js";
+import { buildImageUrl } from "#utils/imageUrl.js";
+
+const withImageUrl = (request, student) => ({
+  ...student,
+  image: buildImageUrl(request, student.image),
+});
 
 export const getStudents = async (request, reply) => {
   const { course } = request.query;
@@ -11,10 +16,14 @@ export const getStudents = async (request, reply) => {
     const results = students.filter(
       (student) => student.course === courseNumber,
     );
-    return reply.status(200).send(results);
+    return reply
+      .status(200)
+      .send(results.map((student) => withImageUrl(request, student)));
   }
 
-  return reply.status(200).send(students);
+  return reply
+    .status(200)
+    .send(students.map((student) => withImageUrl(request, student)));
 };
 
 export const addStudent = async (request, reply) => {
@@ -23,7 +32,7 @@ export const addStudent = async (request, reply) => {
 
   return reply.status(201).send({
     message: "New student was created",
-    student: newStudent,
+    student: withImageUrl(request, newStudent),
   });
 };
 
@@ -47,19 +56,7 @@ export const updateStudent = async (request, reply) => {
     return reply.notFound(ERROR_MESSAGES.STUDENT_NOT_FOUND);
   }
 
-  return reply.status(200).send({ message: "Updated", student: updated });
-};
-
-export const exportStudents = async (_, reply) => {
-  const students = await studentRepository.findAll();
-
-  const csv = stringify(students, {
-    header: true,
-    columns: ["id", "name", "email", "image", "course", "grades"],
-  });
-
-  reply.header("Content-Type", "text/csv; charset=utf-8");
-  reply.header("Content-Disposition", 'attachment; filename="students.csv"');
-
-  return reply.send(csv);
+  return reply
+    .status(200)
+    .send({ message: "Updated", student: withImageUrl(request, updated) });
 };

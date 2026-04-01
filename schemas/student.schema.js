@@ -7,6 +7,8 @@ export const insertStudentSchema = {
       items: { type: "number", minimum: 1, maximum: 5 },
     },
     course: { type: "integer", minimum: 1, maximum: 6 },
+    email: { type: "string", format: "email" },
+    image: { type: "string", format: "uri" },
   },
   required: ["name", "grades", "course"],
   additionalProperties: false,
@@ -22,6 +24,8 @@ export const studentSchema = {
       items: { type: "number", minimum: 1, maximum: 5 },
     },
     course: { type: "integer", minimum: 1, maximum: 6 },
+    email: { type: "string", format: "email" },
+    image: { type: "string", format: "uri" },
   },
   required: ["id", "name", "grades", "course"],
   additionalProperties: false,
@@ -49,6 +53,7 @@ export const updateStudentSchema = {
       type: "array",
       items: { type: "number", minimum: 1, maximum: 5 },
     },
+    email: { type: "string", format: "email" },
     course: { type: "integer", minimum: 1, maximum: 6 },
   },
   additionalProperties: false,
@@ -80,5 +85,14 @@ export const deleteStudentResponseSchema = {
     message: { type: "string" },
   },
   required: ["message"],
+  additionalProperties: false,
+};
+
+export const updateStudentImageResponseSchema = {
+  type: "object",
+  properties: {
+    student: studentSchema,
+  },
+  required: ["student"],
   additionalProperties: false,
 };

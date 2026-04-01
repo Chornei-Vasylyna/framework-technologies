@@ -3,7 +3,10 @@ import {
   deleteStudent,
   getStudents,
   updateStudent,
-} from "#controllers/student.controller.js";
+} from "#controllers/student-crud.controller.js";
+import { exportStudents } from "#controllers/student-export.controller.js";
+import { uploadStudentImage } from "#controllers/student-image.controller.js";
+import { importStudents } from "#controllers/student-import.controller.js";
 import { idSchema } from "#schemas/id.schema.js";
 import {
   addStudentResponseSchema,
@@ -11,6 +14,7 @@ import {
   insertStudentSchema,
   studentsListSchema,
   studentsQuerySchema,
+  updateStudentImageResponseSchema,
   updateStudentResponseSchema,
   updateStudentSchema,
 } from "#schemas/student.schema.js";
@@ -27,6 +31,23 @@ export const studentRoutes = async (fastify) => {
       },
     },
     getStudents,
+  );
+
+  fastify.get("/students/export", exportStudents);
+
+  fastify.post("/students/import", importStudents);
+
+  fastify.post(
+    "/students/:id/image",
+    {
+      schema: {
+        params: idSchema,
+        response: {
+          200: updateStudentImageResponseSchema,
+        },
+      },
+    },
+    uploadStudentImage,
   );
 
   fastify.post(
