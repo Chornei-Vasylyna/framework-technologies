@@ -1,11 +1,7 @@
 {
   "id": 3,
   "name": "Andriy",
-  "grades": [
-    5,
-    5,
-    4
-  ],
+  "grades": [5, 5, 4],
   "course": 4,
   "email": "andriy@example.com",
   "image": null

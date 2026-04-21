@@ -6,6 +6,7 @@ export const envSchema = {
     NODE_ENV: { type: "string", enum: ["development", "production"] },
     ADMIN_API_KEY: { type: "string", minLength: 8 },
     CORS_ORIGIN: { type: "string", minLength: 1 },
+    GITHUB_TOKEN: { type: "string" },
   },
   required: ["HOSTNAME", "PORT", "NODE_ENV", "ADMIN_API_KEY"],
   additionalProperties: false,

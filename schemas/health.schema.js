@@ -29,3 +29,14 @@ export const healthDetailsResponseSchema = {
   required: ["pid", "nodeVersion", "platform", "uptime", "memoryUsage"],
   additionalProperties: false,
 };
+
+export const unauthorizedSchema = {
+  type: "object",
+  properties: {
+    statusCode: { type: "integer", const: 401 },
+    error: { type: "string", const: "Unauthorized" },
+    message: { type: "string" },
+  },
+  required: ["statusCode", "error", "message"],
+  additionalProperties: false,
+};

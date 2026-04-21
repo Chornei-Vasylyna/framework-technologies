@@ -2,7 +2,7 @@ import { ERROR_MESSAGES } from "#constants/errorMessages.js";
 
 export const registerHandlers = async (fastify) => {
   fastify.setNotFoundHandler((request, reply) => {
-    request.log.error(
+    request.log.warn(
       {
         method: request.method,
         url: request.url,
@@ -11,7 +11,11 @@ export const registerHandlers = async (fastify) => {
       "not found",
     );
 
-    return reply.notFound(ERROR_MESSAGES.NOT_FOUND);
+    return reply.code(404).send({
+      statusCode: 404,
+      error: "Not Found",
+      message: ERROR_MESSAGES.NOT_FOUND,
+    });
   });
 
   fastify.setErrorHandler((error, request, reply) => {
@@ -31,6 +35,23 @@ export const registerHandlers = async (fastify) => {
 
     const statusCode = error.statusCode ?? 500;
 
+    if (statusCode === 404) {
+      request.log.warn(
+        {
+          method: request.method,
+          url: request.url,
+          statusCode,
+        },
+        "request not found",
+      );
+
+      return reply.code(404).send({
+        statusCode: 404,
+        error: "Not Found",
+        message: ERROR_MESSAGES.NOT_FOUND,
+      });
+    }
+
     request.log.error(
       {
         err: error.message,
@@ -40,10 +61,6 @@ export const registerHandlers = async (fastify) => {
       },
       "request error",
     );
-
-    if (statusCode === 404) {
-      return reply.notFound(ERROR_MESSAGES.NOT_FOUND);
-    }
 
     if (statusCode >= 400 && statusCode < 500) {
       return reply.code(statusCode).send(error);

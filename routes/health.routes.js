@@ -2,6 +2,7 @@ import { getHealth, getHealthDetails } from "#controllers/health.controller.js";
 import {
   healthDetailsResponseSchema,
   healthResponseSchema,
+  unauthorizedSchema,
 } from "#schemas/health.schema.js";
 
 export const healthRoutes = async (fastify) => {
@@ -9,6 +10,8 @@ export const healthRoutes = async (fastify) => {
     "/health",
     {
       schema: {
+        tags: ["Health"],
+        summary: "Health check",
         response: {
           200: healthResponseSchema,
         },
@@ -31,8 +34,20 @@ export const healthRoutes = async (fastify) => {
         }
       },
       schema: {
+        tags: ["Health"],
+        summary: "Detailed health info (admin)",
+        security: [{ ApiKeyAuth: [] }],
+        headers: {
+          type: "object",
+          properties: {
+            "x-api-key": { type: "string" },
+          },
+          required: ["x-api-key"],
+          additionalProperties: true,
+        },
         response: {
           200: healthDetailsResponseSchema,
+          401: unauthorizedSchema,
         },
       },
     },

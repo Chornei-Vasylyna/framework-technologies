@@ -160,9 +160,15 @@ export const importStudents = async (request, reply) => {
 
   const { imported, rejected } = await processRecords(records, validateRecord);
 
+  if (imported.length === 0) {
+    return reply.status(422).send({
+      imported,
+      rejected,
+    });
+  }
+
   return reply.status(200).send({
-    imported: imported.length,
-    rejected: rejected.length,
-    rejectedRecords: rejected,
+    imported,
+    rejected,
   });
 };

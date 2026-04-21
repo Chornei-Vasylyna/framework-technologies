@@ -1,11 +1,10 @@
 import { ERROR_MESSAGES } from "#constants/errorMessages.js";
+import { NULL_COURSE_DETAILS } from "#constants/studentDetails.js";
 import { studentRepository } from "#repositories/student.repository.js";
-import { buildImageUrl } from "#utils/imageUrl.js";
-
-const withImageUrl = (request, student) => ({
-  ...student,
-  image: buildImageUrl(request, student.image),
-});
+import {
+  getCoursesReferenceData,
+  withImageUrl,
+} from "#utils/studentDetails.js";
 
 export const getStudents = async (request, reply) => {
   const { course } = request.query;
@@ -59,4 +58,63 @@ export const updateStudent = async (request, reply) => {
   return reply
     .status(200)
     .send({ message: "Updated", student: withImageUrl(request, updated) });
+};
+
+export const getStudentsPaginated = async (request, reply) => {
+  const page = Number(request.query?.page) || 1;
+  const limit = Number(request.query?.limit) || 10;
+
+  const students = await studentRepository.findAll();
+  const total = students.length;
+  const totalPages = Math.ceil(total / limit) || 0;
+
+  const start = (page - 1) * limit;
+  const end = start + limit;
+
+  const data = students
+    .slice(start, end)
+    .map((student) => withImageUrl(request, student));
+  return reply.status(200).send({
+    data,
+    total,
+    page,
+    limit,
+    totalPages,
+  });
+};
+
+export const getStudentDetails = async (request, reply) => {
+  const id = Number(request.params?.id);
+  const student = await studentRepository.findById(id);
+
+  if (!student) {
+    return reply.notFound(ERROR_MESSAGES.STUDENT_NOT_FOUND);
+  }
+
+  const baseStudent = withImageUrl(request, student);
+  try {
+    const courses = await getCoursesReferenceData();
+    const course = courses.find(
+      (item) => Number(item?.id) === Number(student.course),
+    );
+    if (!course) {
+      return reply.status(200).send({
+        ...baseStudent,
+        courseDetails: NULL_COURSE_DETAILS,
+      });
+    }
+    return reply.status(200).send({
+      ...baseStudent,
+      courseDetails: {
+        id: course.id ?? null,
+        name: course.name ?? null,
+        credits: course.credits ?? null,
+      },
+    });
+  } catch {
+    return reply.status(200).send({
+      ...baseStudent,
+      courseDetails: NULL_COURSE_DETAILS,
+    });
+  }
 };
