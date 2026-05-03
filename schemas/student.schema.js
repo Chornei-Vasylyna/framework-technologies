@@ -44,6 +44,14 @@ export const studentsQuerySchema = {
   additionalProperties: false,
 };
 
+export const exportStudentsQuerySchema = {
+  type: "object",
+  properties: {
+    transform: { type: "string", enum: ["true", "false"] },
+  },
+  additionalProperties: false,
+};
+
 export const updateStudentSchema = {
   type: "object",
   properties: {
