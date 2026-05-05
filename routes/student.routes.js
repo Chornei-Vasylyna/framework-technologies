@@ -5,7 +5,10 @@ import {
   getStudents,
   updateStudent,
 } from "#controllers/student-crud.controller.js";
-import { exportStudents } from "#controllers/student-export.controller.js";
+import {
+  exportStudents,
+  streamStudentsNDJSON,
+} from "#controllers/student-export.controller.js";
 import { uploadStudentImage } from "#controllers/student-image.controller.js";
 import { importStudents } from "#controllers/student-import.controller.js";
 import { idSchema } from "#schemas/id.schema.js";
@@ -14,6 +17,7 @@ import {
   badRequestSchema,
   deleteStudentResponseSchema,
   exportResponseSchema,
+  exportStudentsQuerySchema,
   importResponseSchema,
   insertStudentSchema,
   notFoundSchema,
@@ -64,12 +68,34 @@ export const studentRoutes = async (fastify) => {
       schema: {
         tags: ["Students"],
         summary: "Export students (CSV)",
+        description:
+          "Export students as CSV. Use ?transform=true to transform grades array to avgGrade",
+        querystring: exportStudentsQuerySchema,
         response: {
           200: exportResponseSchema,
         },
       },
     },
     exportStudents,
+  );
+
+  fastify.get(
+    "/students/stream",
+    {
+      schema: {
+        tags: ["Students"],
+        summary: "Stream students (NDJSON)",
+        description:
+          "Stream students as NDJSON (JSON Lines) format. Records are sent immediately as they are read without loading all data into memory.",
+        response: {
+          200: {
+            description: "Stream of students in NDJSON format",
+            type: "string",
+          },
+        },
+      },
+    },
+    streamStudentsNDJSON,
   );
 
   fastify.post(

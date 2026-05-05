@@ -1,5 +1,8 @@
-import { promises as fs } from "node:fs";
+import { createReadStream, createWriteStream } from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
+import { pipeline } from "node:stream/promises";
+import { createGzip } from "node:zlib";
 
 export const ensureDir = async (dirPath) => {
   await fs.mkdir(dirPath, { recursive: true });
@@ -30,32 +33,38 @@ export const atomicWriteJson = async (filePath, data) => {
   }
 };
 
-const getTimestampDirName = () =>
+const getTimestampFileName = () =>
   new Date().toISOString().replace(/[:.]/g, "-");
 
 export const createBackup = async ({ sourceDir, backupsDir, maxBackups }) => {
   await ensureDir(sourceDir);
   await ensureDir(backupsDir);
 
-  const timestamp = getTimestampDirName();
-  const backupDir = path.join(backupsDir, timestamp);
-  await ensureDir(backupDir);
+  const timestamp = getTimestampFileName();
+  const backupFile = path.join(backupsDir, `${timestamp}.gz`);
 
   const entries = await fs.readdir(sourceDir, { withFileTypes: true });
-  await Promise.all(
-    entries
-      .filter((entry) => entry.isFile())
-      .map((entry) =>
-        fs.copyFile(
-          path.join(sourceDir, entry.name),
-          path.join(backupDir, entry.name),
-        ),
-      ),
-  );
+  const files = entries.filter((entry) => entry.isFile()).sort();
+
+  if (files.length === 0) {
+    return;
+  }
+
+  async function* fileGenerator() {
+    for (const file of files) {
+      const stream = createReadStream(path.join(sourceDir, file.name));
+
+      for await (const chunk of stream) {
+        yield chunk;
+      }
+    }
+  }
+
+  await pipeline(fileGenerator(), createGzip(), createWriteStream(backupFile));
 
   const backupEntries = await fs.readdir(backupsDir, { withFileTypes: true });
   const backups = backupEntries
-    .filter((entry) => entry.isDirectory())
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".gz"))
     .map((entry) => entry.name)
     .sort();
 
@@ -63,8 +72,6 @@ export const createBackup = async ({ sourceDir, backupsDir, maxBackups }) => {
   const toDelete = backups.slice(0, Math.max(0, backups.length - limit));
 
   await Promise.all(
-    toDelete.map((name) =>
-      fs.rm(path.join(backupsDir, name), { recursive: true, force: true }),
-    ),
+    toDelete.map((name) => fs.rm(path.join(backupsDir, name), { force: true })),
   );
 };

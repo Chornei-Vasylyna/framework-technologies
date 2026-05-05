@@ -1,6 +1,7 @@
 import { ERROR_MESSAGES } from "#constants/errorMessages.js";
 import { NULL_COURSE_DETAILS } from "#constants/studentDetails.js";
 import { studentRepository } from "#repositories/student.repository.js";
+import { eventBus } from "#utils/eventBus.js";
 import {
   getCoursesReferenceData,
   withImageUrl,
@@ -28,10 +29,13 @@ export const getStudents = async (request, reply) => {
 export const addStudent = async (request, reply) => {
   const data = request.body;
   const newStudent = await studentRepository.create(data);
+  const studentWithUrl = withImageUrl(request, newStudent);
+
+  eventBus.emit("student.created", studentWithUrl);
 
   return reply.status(201).send({
     message: "New student was created",
-    student: withImageUrl(request, newStudent),
+    student: studentWithUrl,
   });
 };
 
@@ -42,6 +46,8 @@ export const deleteStudent = async (request, reply) => {
   if (!removed) {
     return reply.notFound(ERROR_MESSAGES.STUDENT_NOT_FOUND);
   }
+
+  eventBus.emit("student.deleted", { id });
 
   return reply.status(200).send({ message: "Deleted" });
 };
@@ -55,9 +61,13 @@ export const updateStudent = async (request, reply) => {
     return reply.notFound(ERROR_MESSAGES.STUDENT_NOT_FOUND);
   }
 
+  const studentWithUrl = withImageUrl(request, updated);
+
+  eventBus.emit("student.updated", studentWithUrl);
+
   return reply
     .status(200)
-    .send({ message: "Updated", student: withImageUrl(request, updated) });
+    .send({ message: "Updated", student: studentWithUrl });
 };
 
 export const getStudentsPaginated = async (request, reply) => {

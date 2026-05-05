@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { Readable } from "node:stream";
 import { STUDENTS_DATA_DIR } from "#constants/paths.js";
 import { studentModel } from "#src/models/student.model.js";
 import { atomicWriteJson, ensureDir } from "#utils/fileStorage.js";
@@ -97,10 +98,45 @@ const remove = async (id) => {
   }
 };
 
+const createReadStream = async () => {
+  await ensureDir(dataDir);
+  const entries = await fs.readdir(dataDir, { withFileTypes: true });
+  const files = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+    .map((entry) => ({
+      name: entry.name,
+      id: Number(path.basename(entry.name, ".json")),
+    }))
+    .filter((entry) => Number.isFinite(entry.id))
+    .sort((a, b) => a.id - b.id);
+
+  let index = 0;
+
+  return new Readable({
+    objectMode: true,
+    async read() {
+      if (index >= files.length) {
+        this.push(null);
+        return;
+      }
+
+      try {
+        const filePath = path.join(dataDir, files[index].name);
+        const student = await readFileJson(filePath);
+        this.push(student);
+        index++;
+      } catch (error) {
+        this.destroy(error);
+      }
+    },
+  });
+};
+
 export const studentRepository = {
   findAll,
   findById,
   create,
   update,
   remove,
+  createReadStream,
 };
