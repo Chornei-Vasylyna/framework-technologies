@@ -1,6 +1,4 @@
-import { BACKUPS_DIR, STUDENTS_DATA_DIR } from "#constants/paths.js";
 import { runShutdownOnce } from "#state/shutdownState.js";
-import { createBackup } from "#utils/fileStorage.js";
 import { gracefulShutdown } from "#utils/gracefulShutdown.js";
 import { buildApp } from "./app.js";
 
@@ -24,11 +22,6 @@ process.on("unhandledRejection", (reason) => {
 });
 
 try {
-  await createBackup({
-    sourceDir: STUDENTS_DATA_DIR,
-    backupsDir: BACKUPS_DIR,
-    maxBackups: 5,
-  });
   await server.ready();
   await server.listen({
     port: Number(server.config.PORT),

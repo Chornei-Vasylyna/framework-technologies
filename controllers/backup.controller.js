@@ -2,6 +2,22 @@ import { createReadStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { BACKUPS_DIR } from "#constants/paths.js";
+import { createMongoBackup } from "#utils/mongoBackup.js";
+
+export const createDatabaseBackup = async (request, reply) => {
+  try {
+    const backupService = createMongoBackup(request.server.db);
+    const result = await backupService.createBackup(BACKUPS_DIR);
+
+    return reply.status(201).send({
+      message: "Database backup created successfully",
+      timestamp: result.timestamp,
+    });
+  } catch (error) {
+    request.log.error(`Error creating backup: ${error.message}`);
+    return reply.internalServerError("Failed to create backup");
+  }
+};
 
 export const streamBackup = async (request, reply) => {
   const { timestamp } = request.params;

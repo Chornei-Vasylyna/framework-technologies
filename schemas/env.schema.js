@@ -7,7 +7,16 @@ export const envSchema = {
     ADMIN_API_KEY: { type: "string", minLength: 8 },
     CORS_ORIGIN: { type: "string", minLength: 1 },
     GITHUB_TOKEN: { type: "string" },
+    MONGO_URL: { type: "string", minLength: 1 },
+    MONGO_DB_NAME: { type: "string", minLength: 1 },
   },
-  required: ["HOSTNAME", "PORT", "NODE_ENV", "ADMIN_API_KEY"],
+  required: [
+    "HOSTNAME",
+    "PORT",
+    "NODE_ENV",
+    "ADMIN_API_KEY",
+    "MONGO_URL",
+    "MONGO_DB_NAME",
+  ],
   additionalProperties: false,
 };

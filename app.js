@@ -15,8 +15,8 @@ import { githubRoutesV1, githubRoutesV2 } from "#routes/github.routes.js";
 import { routes } from "#routes/index.js";
 import { studentRoutesV2 } from "#routes/student.routes.v2.js";
 import { websocketRoutes } from "#routes/websocket.routes.js";
-import { checkMigrationNeeded } from "#src/migrations/migrate.js";
 import { getLoggerOptions } from "#utils/getLoggerOptions.js";
+import mongoPlugin from "./db/mongo.js";
 
 export const buildApp = async () => {
   const uploadsDir = path.resolve(process.cwd(), "uploads");
@@ -32,14 +32,9 @@ export const buildApp = async () => {
     },
   });
 
-  if (await checkMigrationNeeded()) {
-    fastify.log.warn(
-      'Data schema changed. Run "npm run migrate" to update existing files.',
-    );
-  }
-
   // Plugins
   fastify.register(fastifyEnv, ENV_OPTIONS);
+  fastify.register(mongoPlugin);
   fastify.register(sensible);
   fastify.register(multipart);
   fastify.register(fastifyStatic, { root: uploadsDir, prefix: "/uploads" });

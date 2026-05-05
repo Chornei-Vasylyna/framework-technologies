@@ -1,142 +1,95 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import { Readable } from "node:stream";
-import { STUDENTS_DATA_DIR } from "#constants/paths.js";
-import { studentModel } from "#src/models/student.model.js";
-import { atomicWriteJson, ensureDir } from "#utils/fileStorage.js";
+import { createStudentModel } from "#db/models/student.model.js";
 
-const dataDir = STUDENTS_DATA_DIR;
-
-// Utility helpers
-const filePathForId = (id) => path.join(dataDir, `${id}.json`);
-
-const readFileJson = async (filePath) => {
-  const content = await fs.readFile(filePath, "utf8");
-  return JSON.parse(content);
-};
-
-const getNextId = async () => {
-  const entries = await fs.readdir(dataDir, { withFileTypes: true });
-  const ids = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-    .map((entry) => Number(path.basename(entry.name, ".json")))
-    .filter((id) => Number.isFinite(id));
-
-  return (ids.length ? Math.max(...ids) : 0) + 1;
-};
-
-// Repository methods
-const findAll = async () => {
-  await ensureDir(dataDir);
-  const entries = await fs.readdir(dataDir, { withFileTypes: true });
-  const files = entries.filter(
-    (entry) => entry.isFile() && entry.name.endsWith(".json"),
-  );
-
-  const items = await Promise.all(
-    files.map(async (entry) => {
-      const filePath = path.join(dataDir, entry.name);
-      return readFileJson(filePath);
-    }),
-  );
-
-  return items.sort((a, b) => a.id - b.id);
-};
-
-const findById = async (id) => {
-  await ensureDir(dataDir);
-  const filePath = filePathForId(id);
-
-  try {
-    return await readFileJson(filePath);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      return null;
-    }
-
-    throw error;
-  }
-};
-
-const create = async (payload) => {
-  await ensureDir(dataDir);
-  const id = await getNextId();
-  const student = { ...studentModel, ...payload, id };
-  const filePath = filePathForId(id);
-
-  await atomicWriteJson(filePath, student);
-  return student;
-};
-
-const update = async (id, updates) => {
-  const existing = await findById(id);
-
-  if (!existing) {
+const toDto = (doc) => {
+  if (!doc) {
     return null;
   }
 
-  const updated = { ...studentModel, ...existing, ...updates, id };
-  const filePath = filePathForId(id);
-
-  await atomicWriteJson(filePath, updated);
-  return updated;
+  const { _id, ...rest } = doc;
+  return { id: _id, ...rest };
 };
 
-const remove = async (id) => {
-  await ensureDir(dataDir);
-  const filePath = filePathForId(id);
+export const createStudentRepository = (db) => {
+  const Student = createStudentModel(db);
 
-  try {
-    await fs.rm(filePath);
-    return true;
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      return false;
+  const getNextId = async () => {
+    const last = await Student.findOne()
+      .sort({ _id: -1 })
+      .select({ _id: 1 })
+      .lean();
+
+    return last ? last._id + 1 : 1;
+  };
+
+  const findAll = async () => {
+    const items = await Student.find().sort({ _id: 1 }).lean();
+    return items.map(toDto);
+  };
+
+  const findById = async (id) => {
+    const doc = await Student.findById(id).lean();
+    return toDto(doc);
+  };
+
+  const create = async (payload) => {
+    const id = await getNextId();
+    const student = { ...payload, _id: id };
+    const created = await Student.create(student);
+    return toDto(created.toObject());
+  };
+
+  const update = async (id, updates) => {
+    const existing = await Student.findById(id).lean();
+
+    if (!existing) {
+      return null;
     }
 
-    throw error;
-  }
+    const updated = {
+      ...existing,
+      ...updates,
+      _id: id,
+    };
+
+    await Student.replaceOne({ _id: id }, updated);
+    return toDto(updated);
+  };
+
+  const remove = async (id) => {
+    const result = await Student.deleteOne({ _id: id });
+    return result.deletedCount > 0;
+  };
+
+  const createReadStream = async () =>
+    Student.find().sort({ _id: 1 }).lean().cursor({
+      transform: toDto,
+    });
+
+  return {
+    findAll,
+    findById,
+    create,
+    update,
+    remove,
+    createReadStream,
+  };
 };
 
-const createReadStream = async () => {
-  await ensureDir(dataDir);
-  const entries = await fs.readdir(dataDir, { withFileTypes: true });
-  const files = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-    .map((entry) => ({
-      name: entry.name,
-      id: Number(path.basename(entry.name, ".json")),
-    }))
-    .filter((entry) => Number.isFinite(entry.id))
-    .sort((a, b) => a.id - b.id);
+let repositoryInstance = null;
 
-  let index = 0;
+export const initStudentRepository = (db) => {
+  repositoryInstance = createStudentRepository(db);
+};
 
-  return new Readable({
-    objectMode: true,
-    async read() {
-      if (index >= files.length) {
-        this.push(null);
-        return;
+export const studentRepository = new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      if (!repositoryInstance) {
+        throw new Error("studentRepository is not initialized");
       }
 
-      try {
-        const filePath = path.join(dataDir, files[index].name);
-        const student = await readFileJson(filePath);
-        this.push(student);
-        index++;
-      } catch (error) {
-        this.destroy(error);
-      }
+      return repositoryInstance[prop];
     },
-  });
-};
-
-export const studentRepository = {
-  findAll,
-  findById,
-  create,
-  update,
-  remove,
-  createReadStream,
-};
+  },
+);
