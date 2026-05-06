@@ -1,4 +1,6 @@
 import { Readable } from "node:stream";
+import { asc, eq } from "drizzle-orm";
+import { students } from "#db/schema.js";
 import { studentModel } from "#src/models/student.model.js";
 
 let repository = null;
@@ -39,18 +41,25 @@ const mapRow = (row) => ({
 });
 
 const createStudentRepository = (db) => {
+  const baseSelect = () =>
+    db
+      .select({
+        id: students.id,
+        name: students.name,
+        grades: students.grades,
+        course: students.course,
+        email: students.email,
+        image: students.image,
+      })
+      .from(students);
+
   const findAll = async () => {
-    const [rows] = await db.query(
-      "SELECT id, name, grades, course, email, image FROM students ORDER BY id",
-    );
+    const rows = await baseSelect().orderBy(asc(students.id));
     return rows.map(mapRow);
   };
 
   const findById = async (id) => {
-    const [rows] = await db.query(
-      "SELECT id, name, grades, course, email, image FROM students WHERE id = ?",
-      [id],
-    );
+    const rows = await baseSelect().where(eq(students.id, id)).limit(1);
 
     if (rows.length === 0) {
       return null;
@@ -61,18 +70,18 @@ const createStudentRepository = (db) => {
 
   const create = async (payload) => {
     const student = { ...studentModel, ...payload };
-    const [result] = await db.query(
-      "INSERT INTO students (name, grades, course, email, image) VALUES (?, ?, ?, ?, ?)",
-      [
-        student.name,
-        JSON.stringify(student.grades ?? []),
-        student.course,
-        student.email ?? "",
-        student.image ?? null,
-      ],
-    );
+    const [result] = await db
+      .insert(students)
+      .values({
+        name: student.name,
+        grades: student.grades ?? [],
+        course: student.course,
+        email: student.email ?? "",
+        image: student.image ?? null,
+      })
+      .$returningId();
 
-    return { ...student, id: Number(result.insertId) };
+    return { ...student, id: Number(result.id) };
   };
 
   const update = async (id, updates) => {
@@ -84,30 +93,27 @@ const createStudentRepository = (db) => {
 
     const updated = { ...studentModel, ...existing, ...updates, id };
 
-    await db.query(
-      "UPDATE students SET name = ?, grades = ?, course = ?, email = ?, image = ? WHERE id = ?",
-      [
-        updated.name,
-        JSON.stringify(updated.grades ?? []),
-        updated.course,
-        updated.email ?? "",
-        updated.image ?? null,
-        id,
-      ],
-    );
+    await db
+      .update(students)
+      .set({
+        name: updated.name,
+        grades: updated.grades ?? [],
+        course: updated.course,
+        email: updated.email ?? "",
+        image: updated.image ?? null,
+      })
+      .where(eq(students.id, id));
 
     return updated;
   };
 
   const remove = async (id) => {
-    const [result] = await db.query("DELETE FROM students WHERE id = ?", [id]);
+    const result = await db.delete(students).where(eq(students.id, id));
     return result.affectedRows > 0;
   };
 
   const createReadStream = async () => {
-    const [rows] = await db.query(
-      "SELECT id, name, grades, course, email, image FROM students ORDER BY id",
-    );
+    const rows = await baseSelect().orderBy(asc(students.id));
     return Readable.from(rows.map(mapRow), { objectMode: true });
   };
 

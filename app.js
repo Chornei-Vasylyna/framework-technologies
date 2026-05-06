@@ -11,13 +11,13 @@ import { registerHooks } from "#configs/fastify/hooks.js";
 import { registerSecurityPlugins } from "#configs/fastify/security.js";
 import { registerSwagger } from "#configs/fastify/swagger.js";
 import { ENV_OPTIONS } from "#constants/index.js";
+import drizzlePlugin from "#db/drizzle.js";
 import mysqlPlugin from "#db/mysql.js";
 import { initStudentRepository } from "#repositories/student.repository.js";
 import { githubRoutesV1, githubRoutesV2 } from "#routes/github.routes.js";
 import { routes } from "#routes/index.js";
 import { studentRoutesV2 } from "#routes/student.routes.v2.js";
 import { websocketRoutes } from "#routes/websocket.routes.js";
-import { checkMigrationNeeded } from "#src/migrations/migrate.js";
 import { getLoggerOptions } from "#utils/getLoggerOptions.js";
 
 export const buildApp = async () => {
@@ -38,19 +38,14 @@ export const buildApp = async () => {
   // Plugins
   await fastify.register(fastifyEnv, ENV_OPTIONS);
   await fastify.register(mysqlPlugin);
-  initStudentRepository(fastify.db);
+  await fastify.register(drizzlePlugin);
+  initStudentRepository(fastify.drizzle);
   fastify.register(sensible);
   fastify.register(multipart);
   fastify.register(fastifyStatic, { root: uploadsDir, prefix: "/uploads" });
   fastify.register(websocket);
   await registerSecurityPlugins(fastify);
   await registerSwagger(fastify);
-
-  if (await checkMigrationNeeded(fastify.db)) {
-    fastify.log.warn(
-      'Data schema changed. Run "npm run migrate" to update existing data.',
-    );
-  }
 
   // Hooks
   await registerHooks(fastify);

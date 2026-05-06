@@ -26,7 +26,7 @@ const mysqlPlugin = fp(async (fastify) => {
     process.exit(1);
   }
 
-  fastify.decorate("db", pool);
+  fastify.decorate("mysql", pool);
 
   fastify.addHook("onClose", async () => {
     await pool.end();
