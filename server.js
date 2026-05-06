@@ -1,6 +1,7 @@
-import { BACKUPS_DIR, STUDENTS_DATA_DIR } from "#constants/paths.js";
+import { BACKUPS_DIR } from "#constants/paths.js";
+import { getMysqlConfigFromEnv } from "#db/mysql.js";
 import { runShutdownOnce } from "#state/shutdownState.js";
-import { createBackup } from "#utils/fileStorage.js";
+import { createMysqlBackup } from "#utils/fileStorage.js";
 import { gracefulShutdown } from "#utils/gracefulShutdown.js";
 import { buildApp } from "./app.js";
 
@@ -24,8 +25,8 @@ process.on("unhandledRejection", (reason) => {
 });
 
 try {
-  await createBackup({
-    sourceDir: STUDENTS_DATA_DIR,
+  await createMysqlBackup({
+    ...getMysqlConfigFromEnv(server.config),
     backupsDir: BACKUPS_DIR,
     maxBackups: 5,
   });

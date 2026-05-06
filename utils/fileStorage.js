@@ -1,7 +1,9 @@
-import { createReadStream, createWriteStream } from "node:fs";
+import { exec } from "node:child_process";
+import { createWriteStream } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
+import { promisify } from "node:util";
 import { createGzip } from "node:zlib";
 
 export const ensureDir = async (dirPath) => {
@@ -36,32 +38,9 @@ export const atomicWriteJson = async (filePath, data) => {
 const getTimestampFileName = () =>
   new Date().toISOString().replace(/[:.]/g, "-");
 
-export const createBackup = async ({ sourceDir, backupsDir, maxBackups }) => {
-  await ensureDir(sourceDir);
-  await ensureDir(backupsDir);
+const execPromise = promisify(exec);
 
-  const timestamp = getTimestampFileName();
-  const backupFile = path.join(backupsDir, `${timestamp}.gz`);
-
-  const entries = await fs.readdir(sourceDir, { withFileTypes: true });
-  const files = entries.filter((entry) => entry.isFile()).sort();
-
-  if (files.length === 0) {
-    return;
-  }
-
-  async function* fileGenerator() {
-    for (const file of files) {
-      const stream = createReadStream(path.join(sourceDir, file.name));
-
-      for await (const chunk of stream) {
-        yield chunk;
-      }
-    }
-  }
-
-  await pipeline(fileGenerator(), createGzip(), createWriteStream(backupFile));
-
+const cleanupOldBackups = async (backupsDir, maxBackups) => {
   const backupEntries = await fs.readdir(backupsDir, { withFileTypes: true });
   const backups = backupEntries
     .filter((entry) => entry.isFile() && entry.name.endsWith(".gz"))
@@ -74,4 +53,43 @@ export const createBackup = async ({ sourceDir, backupsDir, maxBackups }) => {
   await Promise.all(
     toDelete.map((name) => fs.rm(path.join(backupsDir, name), { force: true })),
   );
+};
+
+export const createMysqlBackup = async ({
+  host,
+  port,
+  user,
+  password,
+  database,
+  backupsDir,
+  maxBackups,
+} = {}) => {
+  if (!host || !port || !user || !database) {
+    throw new Error(
+      "Missing required MySQL configuration: host, port, user, database",
+    );
+  }
+
+  await ensureDir(backupsDir);
+
+  const timestamp = getTimestampFileName();
+  const backupFile = path.join(backupsDir, `${timestamp}.gz`);
+
+  const mysqldumpCmd = `mysqldump -h "${host}" -P ${port} -u "${user}" ${password ? `-p"${password}"` : ""} "${database}"`;
+
+  try {
+    const { stdout } = await execPromise(mysqldumpCmd);
+    await pipeline(
+      async function* () {
+        yield stdout;
+      },
+      createGzip(),
+      createWriteStream(backupFile),
+    );
+
+    await cleanupOldBackups(backupsDir, maxBackups);
+  } catch (error) {
+    await fs.rm(backupFile, { force: true });
+    throw new Error(`MySQL backup failed: ${error.message}`, { cause: error });
+  }
 };
