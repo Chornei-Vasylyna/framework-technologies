@@ -12,6 +12,8 @@ export const envSchema = {
     MYSQL_USER: { type: "string", minLength: 1 },
     MYSQL_PASSWORD: { type: "string" },
     MYSQL_DB: { type: "string", minLength: 1 },
+    REDIS_HOST: { type: "string", minLength: 1 },
+    REDIS_PORT: { type: "string", pattern: "^[0-9]+$" },
   },
   required: [
     "HOSTNAME",
@@ -23,6 +25,8 @@ export const envSchema = {
     "MYSQL_USER",
     "MYSQL_PASSWORD",
     "MYSQL_DB",
+    "REDIS_HOST",
+    "REDIS_PORT",
   ],
   additionalProperties: false,
 };

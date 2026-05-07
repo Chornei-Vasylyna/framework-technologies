@@ -3,6 +3,7 @@ import path from "node:path";
 import { ERROR_MESSAGES } from "#constants/errorMessages.js";
 import { UPLOADS_DIR } from "#constants/paths.js";
 import { studentRepository } from "#repositories/student.repository.js";
+import { createStudentsCache } from "#utils/studentsCache.js";
 import { ensureDir } from "#utils/fileStorage.js";
 import { buildImageUrl } from "#utils/imageUrl.js";
 
@@ -93,6 +94,11 @@ export const uploadStudentImage = async (request, reply) => {
     await fsPromises.rm(filePath, { force: true });
     return reply.notFound(ERROR_MESSAGES.STUDENT_NOT_FOUND);
   }
+
+  const { invalidateStudentsCache } = createStudentsCache({
+    redis: request.server.redis,
+  });
+  await invalidateStudentsCache();
 
   return reply.status(200).send({
     student: {

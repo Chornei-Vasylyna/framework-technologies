@@ -80,9 +80,7 @@
       "compositePrimaryKeys": {
         "students_id": {
           "name": "students_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},

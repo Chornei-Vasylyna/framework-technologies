@@ -1,6 +1,7 @@
 import { parse } from "csv-parse/sync";
 import { studentRepository } from "#repositories/student.repository.js";
 import { insertStudentSchema } from "#schemas/student.schema.js";
+import { createStudentsCache } from "#utils/studentsCache.js";
 
 // Formatting
 const formatValidationErrors = (errors) =>
@@ -159,6 +160,13 @@ export const importStudents = async (request, reply) => {
   const validateRecord = createValidateRecord(validateStudent);
 
   const { imported, rejected } = await processRecords(records, validateRecord);
+
+  if (imported.length > 0) {
+    const { invalidateStudentsCache } = createStudentsCache({
+      redis: request.server.redis,
+    });
+    await invalidateStudentsCache();
+  }
 
   if (imported.length === 0) {
     return reply.status(422).send({

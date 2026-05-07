@@ -6,6 +6,7 @@ import {
   getCoursesReferenceData,
   withImageUrl,
 } from "#utils/studentDetails.js";
+import { createStudentsCache } from "#utils/studentsCache.js";
 
 export const getStudents = async (request, reply) => {
   const { course } = request.query;
@@ -31,6 +32,11 @@ export const addStudent = async (request, reply) => {
   const newStudent = await studentRepository.create(data);
   const studentWithUrl = withImageUrl(request, newStudent);
 
+  const { invalidateStudentsCache } = createStudentsCache({
+    redis: request.server.redis,
+  });
+  await invalidateStudentsCache();
+
   eventBus.emit("student.created", studentWithUrl);
 
   return reply.status(201).send({
@@ -49,6 +55,11 @@ export const deleteStudent = async (request, reply) => {
 
   eventBus.emit("student.deleted", { id });
 
+  const { invalidateStudentsCache } = createStudentsCache({
+    redis: request.server.redis,
+  });
+  await invalidateStudentsCache();
+
   return reply.status(200).send({ message: "Deleted" });
 };
 
@@ -63,6 +74,11 @@ export const updateStudent = async (request, reply) => {
 
   const studentWithUrl = withImageUrl(request, updated);
 
+  const { invalidateStudentsCache } = createStudentsCache({
+    redis: request.server.redis,
+  });
+  await invalidateStudentsCache();
+
   eventBus.emit("student.updated", studentWithUrl);
 
   return reply
@@ -74,6 +90,16 @@ export const getStudentsPaginated = async (request, reply) => {
   const page = Number(request.query?.page) || 1;
   const limit = Number(request.query?.limit) || 10;
 
+  const { getCachedStudents, setCachedStudents } = createStudentsCache({
+    redis: request.server.redis,
+  });
+
+  const cached = await getCachedStudents({ page, limit });
+
+  if (cached) {
+    return reply.status(200).send(cached);
+  }
+
   const students = await studentRepository.findAll();
   const total = students.length;
   const totalPages = Math.ceil(total / limit) || 0;
@@ -84,13 +110,17 @@ export const getStudentsPaginated = async (request, reply) => {
   const data = students
     .slice(start, end)
     .map((student) => withImageUrl(request, student));
-  return reply.status(200).send({
+  const payload = {
     data,
     total,
     page,
     limit,
     totalPages,
-  });
+  };
+
+  await setCachedStudents({ page, limit, payload });
+
+  return reply.status(200).send(payload);
 };
 
 export const getStudentDetails = async (request, reply) => {
@@ -103,7 +133,9 @@ export const getStudentDetails = async (request, reply) => {
 
   const baseStudent = withImageUrl(request, student);
   try {
-    const courses = await getCoursesReferenceData();
+    const courses = await getCoursesReferenceData({
+      redis: request.server.redis,
+    });
     const course = courses.find(
       (item) => Number(item?.id) === Number(student.course),
     );

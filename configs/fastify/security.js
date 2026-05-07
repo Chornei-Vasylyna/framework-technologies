@@ -9,6 +9,7 @@ export const registerSecurityPlugins = async (fastify) => {
   fastify.register(rateLimit, {
     max: 100,
     timeWindow: "1 minute",
+    redis: fastify.redis,
     errorResponseBuilder: () => ({
       statusCode: 429,
       error: "Too Many Requests",

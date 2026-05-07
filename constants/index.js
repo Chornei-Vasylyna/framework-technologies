@@ -1,5 +1,7 @@
 import { envSchema } from "#schemas/env.schema.js";
 
+export * from "#constants/redis.js";
+
 export const ENV_OPTIONS = {
   schema: envSchema,
   dotenv: true,

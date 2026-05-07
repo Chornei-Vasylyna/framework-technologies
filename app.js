@@ -8,6 +8,7 @@ import Fastify from "fastify";
 import { loadEnvConfig } from "#configs/fastify/env.js";
 import { registerHandlers } from "#configs/fastify/handlers.js";
 import { registerHooks } from "#configs/fastify/hooks.js";
+import redisPlugin from "#configs/fastify/redis.js";
 import { registerSecurityPlugins } from "#configs/fastify/security.js";
 import { registerSwagger } from "#configs/fastify/swagger.js";
 import { ENV_OPTIONS } from "#constants/index.js";
@@ -37,6 +38,7 @@ export const buildApp = async () => {
 
   // Plugins
   await fastify.register(fastifyEnv, ENV_OPTIONS);
+  await fastify.register(redisPlugin);
   await fastify.register(mysqlPlugin);
   await fastify.register(drizzlePlugin);
   initStudentRepository(fastify.drizzle);
