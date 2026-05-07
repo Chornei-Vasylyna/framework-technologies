@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1778105109052,
+      "tag": "0000_orange_sentinels",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1778105369869,
+      "tag": "0001_blushing_pixie",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1778105386729,
+      "tag": "0002_brave_infant_terrible",
+      "breakpoints": true
+    }
+  ]
+}

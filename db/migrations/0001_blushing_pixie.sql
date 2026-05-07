@@ -1,0 +1,1 @@
+ALTER TABLE `students` ADD `surname` varchar(255);

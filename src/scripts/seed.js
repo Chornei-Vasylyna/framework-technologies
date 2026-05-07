@@ -1,25 +1,53 @@
-import path from "node:path";
-import { STUDENTS_DATA_DIR } from "#constants/paths.js";
+import { count, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/mysql2";
+import { loadEnvConfig } from "#configs/fastify/env.js";
+import { createMysqlPool } from "#db/mysql.js";
+import { students } from "#db/schema.js";
 import { studentModel } from "#src/models/student.model.js";
-import { atomicWriteJson, ensureDir } from "#utils/fileStorage.js";
 
-const dataDir = STUDENTS_DATA_DIR;
-
-const students = [
+const SEED_DATA = [
   { id: 1, name: "Ivan", grades: [5, 4, 5], course: 2 },
   { id: 2, name: "Olena", grades: [4, 5, 5], course: 1 },
 ];
 
 const seed = async () => {
-  await ensureDir(dataDir);
+  const force = process.argv.includes("--force");
+  const env = await loadEnvConfig();
+  const pool = createMysqlPool(env);
+  const db = drizzle(pool);
 
-  await Promise.all(
-    students.map(async (student) => {
-      const filePath = path.join(dataDir, `${student.id}.json`);
-      const record = { ...studentModel, ...student, id: student.id };
-      await atomicWriteJson(filePath, record);
-    }),
-  );
+  try {
+    const countRows = await db.select({ total: count() }).from(students);
+    const total = Number(countRows[0]?.total ?? 0);
+
+    if (!force && total > 0) {
+      console.log("Database is not empty. Seed skipped.");
+      return;
+    }
+
+    if (force) {
+      await db.execute(sql`TRUNCATE TABLE students`);
+    }
+
+    const payload = SEED_DATA.map((student) => {
+      const record = { ...studentModel, ...student };
+      return {
+        name: record.name,
+        grades: record.grades ?? [],
+        course: record.course,
+        email: record.email ?? "",
+        image: record.image ?? null,
+      };
+    });
+
+    if (payload.length > 0) {
+      await db.insert(students).values(payload);
+    }
+
+    console.log("Seed complete.");
+  } finally {
+    await pool.end();
+  }
 };
 
 seed().catch((error) => {
