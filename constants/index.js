@@ -8,4 +8,4 @@ export const ENV_OPTIONS = {
 };
 
 export const API_METHODS = ["GET", "POST", "PATCH", "DELETE"];
-export const CORS_ALLOWED_HEADERS = ["Content-Type", "X-API-Key"];
+export const CORS_ALLOWED_HEADERS = ["Content-Type", "X-API-Key", "Cookie"];

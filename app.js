@@ -10,11 +10,13 @@ import { registerHandlers } from "#configs/fastify/handlers.js";
 import { registerHooks } from "#configs/fastify/hooks.js";
 import redisPlugin from "#configs/fastify/redis.js";
 import { registerSecurityPlugins } from "#configs/fastify/security.js";
+import sessionPlugin from "#configs/fastify/session.js";
 import { registerSwagger } from "#configs/fastify/swagger.js";
 import { ENV_OPTIONS } from "#constants/index.js";
 import drizzlePlugin from "#db/drizzle.js";
 import mysqlPlugin from "#db/mysql.js";
 import { initStudentRepository } from "#repositories/student.repository.js";
+import { initUserRepository } from "#repositories/user.repository.js";
 import { githubRoutesV1, githubRoutesV2 } from "#routes/github.routes.js";
 import { routes } from "#routes/index.js";
 import { studentRoutesV2 } from "#routes/student.routes.v2.js";
@@ -39,9 +41,11 @@ export const buildApp = async () => {
   // Plugins
   await fastify.register(fastifyEnv, ENV_OPTIONS);
   await fastify.register(redisPlugin);
+  await fastify.register(sessionPlugin);
   await fastify.register(mysqlPlugin);
   await fastify.register(drizzlePlugin);
   initStudentRepository(fastify.drizzle);
+  initUserRepository(fastify.drizzle);
   fastify.register(sensible);
   fastify.register(multipart);
   fastify.register(fastifyStatic, { root: uploadsDir, prefix: "/uploads" });

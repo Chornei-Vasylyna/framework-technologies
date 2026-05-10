@@ -108,8 +108,14 @@ const createStudentRepository = (db) => {
   };
 
   const remove = async (id) => {
-    const result = await db.delete(students).where(eq(students.id, id));
-    return result.affectedRows > 0;
+    const existing = await findById(id);
+
+    if (!existing) {
+      return false;
+    }
+
+    await db.delete(students).where(eq(students.id, id));
+    return true;
   };
 
   const createReadStream = async () => {
