@@ -1,9 +1,11 @@
 import { envSchema } from "#schemas/env.schema.js";
 
+export * from "#constants/redis.js";
+
 export const ENV_OPTIONS = {
   schema: envSchema,
   dotenv: true,
 };
 
 export const API_METHODS = ["GET", "POST", "PATCH", "DELETE"];
-export const CORS_ALLOWED_HEADERS = ["Content-Type", "X-API-Key"];
+export const CORS_ALLOWED_HEADERS = ["Content-Type", "X-API-Key", "Cookie"];

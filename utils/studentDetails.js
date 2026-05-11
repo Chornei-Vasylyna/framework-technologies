@@ -1,14 +1,9 @@
-// Утиліти для details-логіки студентів
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { REDIS_KEYS, REDIS_TTL_SECONDS } from "#constants/redis.js";
 import {
-  CACHE_FILE_PATH,
-  CACHE_TTL_MS,
   EXTERNAL_COURSES_URL,
   FETCH_TIMEOUT_MS,
   RETRY_DELAYS_MS,
 } from "#constants/studentDetails.js";
-import { ensureDir } from "#utils/fileStorage.js";
 import { buildImageUrl } from "#utils/imageUrl.js";
 
 export function withImageUrl(request, student) {
@@ -22,38 +17,38 @@ export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function readCache() {
-  try {
-    const content = await fs.readFile(CACHE_FILE_PATH, "utf8");
-    const parsed = JSON.parse(content);
-    if (
-      !Array.isArray(parsed?.courses) ||
-      typeof parsed?.cachedAt !== "number"
-    ) {
-      return null;
-    }
-    const isTtlActive = Date.now() - parsed.cachedAt < CACHE_TTL_MS;
-    if (!isTtlActive) {
-      return null;
-    }
-    return parsed.courses;
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      return null;
-    }
-    throw error;
+const readCache = async (redis) => {
+  if (!redis) {
+    return null;
   }
-}
 
-export async function writeCache(courses) {
-  const cacheDir = path.dirname(CACHE_FILE_PATH);
-  await ensureDir(cacheDir);
-  await fs.writeFile(
-    CACHE_FILE_PATH,
-    JSON.stringify({ cachedAt: Date.now(), courses }, null, 2),
-    "utf8",
+  const cached = await redis.get(REDIS_KEYS.coursesReference);
+
+  if (!cached) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(cached);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    await redis.del(REDIS_KEYS.coursesReference);
+    return null;
+  }
+};
+
+const writeCache = async (redis, courses) => {
+  if (!redis) {
+    return;
+  }
+
+  await redis.set(
+    REDIS_KEYS.coursesReference,
+    JSON.stringify(courses),
+    "EX",
+    REDIS_TTL_SECONDS.coursesReference,
   );
-}
+};
 
 export async function fetchWithTimeout(url) {
   const controller = new AbortController();
@@ -84,10 +79,10 @@ export async function fetchCoursesWithRetry() {
   throw lastError;
 }
 
-export async function getCoursesReferenceData() {
-  const cached = await readCache();
+export async function getCoursesReferenceData({ redis } = {}) {
+  const cached = await readCache(redis);
   if (cached) return cached;
   const courses = await fetchCoursesWithRetry();
-  await writeCache(courses);
+  await writeCache(redis, courses);
   return courses;
 }

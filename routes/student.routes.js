@@ -30,7 +30,17 @@ import {
   updateStudentSchema,
 } from "#schemas/student.schema.js";
 
+const protectedMethods = new Set(["POST", "PATCH", "DELETE"]);
+
 export const studentRoutes = async (fastify) => {
+  fastify.addHook("onRequest", async (request, reply) => {
+    if (protectedMethods.has(request.method)) {
+      if (!request.session?.user) {
+        return reply.unauthorized();
+      }
+    }
+  });
+
   fastify.get(
     "/students",
     {
