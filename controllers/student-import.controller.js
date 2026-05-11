@@ -118,7 +118,16 @@ const processRecords = async (records, validateRecord) => {
 
 // Controller
 export const importStudents = async (request, reply) => {
-  const data = await request.file();
+  let data;
+  try {
+    data = await request.file();
+  } catch (err) {
+    // fastify-multipart throws a 406 when the request isn't multipart
+    if (err && /not multipart/i.test(String(err.message))) {
+      return reply.badRequest("File not provided");
+    }
+    throw err;
+  }
 
   if (!data) {
     return reply.badRequest("File not provided");
