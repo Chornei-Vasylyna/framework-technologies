@@ -101,9 +101,11 @@ export const studentRoutes = async (fastify) => {
   fastify.post(
     "/students/import",
     {
+      onRequest: async (request) => request.jwtVerify(),
       schema: {
         tags: ["Students"],
         summary: "Import students (CSV)",
+        security: [{ BearerAuth: [] }],
         response: {
           200: importResponseSchema,
           400: badRequestSchema,
@@ -117,9 +119,11 @@ export const studentRoutes = async (fastify) => {
   fastify.post(
     "/students/:id/image",
     {
+      onRequest: async (request) => request.jwtVerify(),
       schema: {
         tags: ["Students"],
         summary: "Upload student image",
+        security: [{ BearerAuth: [] }],
         params: idSchema,
         response: {
           200: updateStudentImageResponseSchema,
@@ -134,9 +138,11 @@ export const studentRoutes = async (fastify) => {
   fastify.post(
     "/students",
     {
+      onRequest: async (request) => request.jwtVerify(),
       schema: {
         tags: ["Students"],
         summary: "Create student",
+        security: [{ BearerAuth: [] }],
         body: insertStudentSchema,
         response: {
           201: addStudentResponseSchema,
@@ -150,9 +156,11 @@ export const studentRoutes = async (fastify) => {
   fastify.patch(
     "/students/:id",
     {
+      onRequest: async (request) => request.jwtVerify(),
       schema: {
         tags: ["Students"],
         summary: "Update student",
+        security: [{ BearerAuth: [] }],
         params: idSchema,
         body: updateStudentSchema,
         response: {
@@ -168,9 +176,11 @@ export const studentRoutes = async (fastify) => {
   fastify.delete(
     "/students/:id",
     {
+      onRequest: async (request) => request.jwtVerify(),
       schema: {
         tags: ["Students"],
         summary: "Delete student",
+        security: [{ BearerAuth: [] }],
         params: idSchema,
         response: {
           200: deleteStudentResponseSchema,

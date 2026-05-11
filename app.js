@@ -5,6 +5,7 @@ import sensible from "@fastify/sensible";
 import fastifyStatic from "@fastify/static";
 import websocket from "@fastify/websocket";
 import Fastify from "fastify";
+import authPlugin from "#configs/fastify/auth.js";
 import { loadEnvConfig } from "#configs/fastify/env.js";
 import { registerHandlers } from "#configs/fastify/handlers.js";
 import { registerHooks } from "#configs/fastify/hooks.js";
@@ -15,6 +16,8 @@ import { ENV_OPTIONS } from "#constants/index.js";
 import drizzlePlugin from "#db/drizzle.js";
 import mysqlPlugin from "#db/mysql.js";
 import { initStudentRepository } from "#repositories/student.repository.js";
+import { initUserRepository } from "#repositories/user.repository.js";
+import { authRoutes } from "#routes/auth.routes.js";
 import { githubRoutesV1, githubRoutesV2 } from "#routes/github.routes.js";
 import { routes } from "#routes/index.js";
 import { studentRoutesV2 } from "#routes/student.routes.v2.js";
@@ -39,9 +42,11 @@ export const buildApp = async () => {
   // Plugins
   await fastify.register(fastifyEnv, ENV_OPTIONS);
   await fastify.register(redisPlugin);
+  await fastify.register(authPlugin);
   await fastify.register(mysqlPlugin);
   await fastify.register(drizzlePlugin);
   initStudentRepository(fastify.drizzle);
+  initUserRepository(fastify.drizzle);
   fastify.register(sensible);
   fastify.register(multipart);
   fastify.register(fastifyStatic, { root: uploadsDir, prefix: "/uploads" });
@@ -57,6 +62,7 @@ export const buildApp = async () => {
 
   // Routes
   fastify.register(routes, { prefix: "/api/v1" });
+  fastify.register(authRoutes, { prefix: "/api/v1/auth" });
   fastify.register(githubRoutesV1, { prefix: "/api/v1" });
   fastify.register(githubRoutesV2, { prefix: "/api/v2" });
   fastify.register(studentRoutesV2, { prefix: "/api/v2" });

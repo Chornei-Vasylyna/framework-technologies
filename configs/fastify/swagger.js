@@ -15,6 +15,12 @@ export const registerSwagger = async (fastify) => {
             name: "x-api-key",
             in: "header",
           },
+          BearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+            description: "Authorization: Bearer <token>",
+          },
         },
       },
     },
