@@ -15,4 +15,10 @@ export default defineConfig([
       "no-process-env": ["error"],
     },
   },
+  {
+    files: ["tests/**/*.js"],
+    rules: {
+      "no-process-env": "off",
+    },
+  },
 ]);
